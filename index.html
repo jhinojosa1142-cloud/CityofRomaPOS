@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Official Invoice System - City of Roma, Texas">
+  <title>City of Roma | Invoice System</title>
+  <style>
+    /* VARIABLES DE MARCA */
+    :root {
+      --roma-blue-dark: #002d5a;
+      --roma-blue-light: #0056b3;
+      --accent-blue: #e3f2fd;
+      --success-green: #28a745;
+      --danger-red: #dc3545;
+      --text-gray: #333;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+      color: var(--text-gray);
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    /* CONTENEDOR PRINCIPAL */
+    .invoice-card {
+      background: white;
+      max-width: 1100px;
+      margin: 0 auto;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      overflow: hidden;
+      border-top: 12px solid var(--roma-blue-dark);
+    }
+
+    header {
+      background-color: white;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--accent-blue);
+    }
+
+    .city-info h1 { margin: 0; color: var(--roma-blue-dark); font-size: 1.8rem; }
+    .city-info address { font-style: normal; font-size: 0.85rem; color: #666; }
+
+    form { padding: 30px; }
+
+    /* GRID LAYOUTS */
+    .grid-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    fieldset {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 25px;
+    }
+
+    legend {
+      font-weight: bold;
+      color: var(--roma-blue-light);
+      padding: 0 10px;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+
+    /* TABLA DINÁMICA */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+    th { background: var(--accent-blue); padding: 12px; text-align: left; font-size: 0.85rem; }
+    td { padding: 8px; border-bottom: 1px solid #eee; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 0.95rem;
+    }
+
+    input[readonly] { background-color: #f9f9f9; cursor: not-allowed; }
+
+    /* BOTONES */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: opacity 0.2s;
+    }
+    .btn-add { background-color: var(--success-green); color: white; margin-bottom: 10px; }
+    .btn-submit { 
+      background-color: var(--roma-blue-dark); 
+      color: white; 
+      width: 100%; 
+      padding: 18px; 
+      font-size: 1.2rem; 
+      margin-top: 20px;
+    }
+    .btn:hover { opacity: 0.85; }
+    .remove-row { color: var(--danger-red); font-size: 1.5rem; background: none; border: none; cursor: pointer; }
+
+    /* SECCIÓN TOTALES */
+    .totals-area {
+      background: var(--accent-blue);
+      padding: 20px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .total-field { display: flex; align-items: center; gap: 10px; }
+    .total-field label { font-weight: bold; min-width: 120px; text-align: right; }
+    .total-field input { width: 150px; text-align: right; font-weight: bold; }
+
+  </style>
+</head>
+<body>
+
+<div class="invoice-card">
+  <header>
+    <div class="city-info">
+      <h1>City of Roma, Texas</h1>
+      <address>
+        P.O. Box 947, Roma, TX 78584<br>
+        Phone: 956-849-1411
+      </address>
+    </div>
+    <div style="text-align: right;">
+      <h2 style="color: var(--roma-blue-light); margin: 0;">INVOICE SYSTEM</h2>
+      <p id="currentDateDisplay" style="font-weight: bold;"></p>
+    </div>
+  </header>
+
+  <form id="invoiceForm">
+    <div class="grid-row">
+      <div class="form-group">
+        <label for="dept">Department</label>
+        <select id="dept" name="Department" required>
+          <option value="Administration">Administration</option>
+          <option value="Planning & Zoning">Planning & Zoning</option>
+          <option value="Fire Department">Fire Department</option>
+          <option value="Police Department">Police Department</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="invNum">Invoice #</label>
+        <input type="text" id="invNum" name="InvoiceNumber" placeholder="PENDING" readonly>
+      </div>
+      <div class="form-group">
+        <label for="payMethod">Payment Method</label>
+        <select id="payMethod" name="PaymentMethod">
+          <option value="Cash">Cash</option>
+          <option value="Check">Check</option>
+          <option value="Credit Card">Credit Card (3% Fee)</option>
+        </select>
+      </div>
+    </div>
+
+    <fieldset>
+      <legend>Fee Description & Costs</legend>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Fee Type</th>
+              <th>Description</th>
+              <th style="width: 80px;">Qty</th>
+              <th style="width: 150px;">Unit Cost ($)</th>
+              <th style="width: 50px;"></th>
+            </tr>
+          </thead>
+          <tbody id="feeBody">
+            </tbody>
+        </table>
+      </div>
+      <button type="button" class="btn btn-add" id="btnAddRow">+ Add New Line</button>
+    </fieldset>
+
+    <div class="grid-row" style="grid-template-columns: 2fr 1fr;">
+      <fieldset>
+        <legend>Billing To</legend>
+        <div class="grid-row">
+          <input type="text" name="BusinessName" placeholder="Business Name" aria-label="Business Name">
+          <input type="text" name="CustomerName" placeholder="Full Name" aria-label="Full Name">
+        </div>
+        <input type="text" name="Address" placeholder="Street Address" style="margin-bottom: 10px;">
+        <div class="grid-row">
+          <input type="text" name="City" placeholder="City" value="Roma">
+          <input type="text" name="ZipCode" placeholder="Zip Code" value="78584">
+          <input type="tel" name="Phone" placeholder="Phone Number">
+        </div>
+      </fieldset>
+
+      <div class="totals-area">
+        <div class="total-field">
+          <label>Subtotal:</label>
+          <input type="number" name="Subtotal" id="subtotal" value="0.00" readonly>
+        </div>
+        <div class="total-field">
+          <label>Card Fee (3%):</label>
+          <input type="number" name="CardFee" id="cardFee" value="0.00" readonly>
+        </div>
+        <div class="total-field">
+          <label style="font-size: 1.2rem;">TOTAL:</label>
+          <input type="number" name="GrandTotal" id="grandTotal" value="0.00" readonly style="color: var(--roma-blue-dark); border: 2px solid var(--roma-blue-dark);">
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-submit">GENERATE & SAVE TO SHAREPOINT</button>
+  </form>
+</div>
+
+<template id="rowTemplate">
+  <tr>
+    <td>
+      <select name="feeType[]" required>
+        <option value="General">General Fee</option>
+        <option value="Permit">Permit</option>
+        <option value="Zoning">Zoning</option>
+        <option value="Fine">Fine/Citation</option>
+      </select>
+    </td>
+    <td><input type="text" name="desc[]" required placeholder="Service description..."></td>
+    <td><input type="number" name="qty[]" class="calc-trigger qty" value="1" min="1"></td>
+    <td><input type="number" name="cost[]" class="calc-trigger cost" value="0.00" step="0.01"></td>
+    <td><button type="button" class="remove-row" title="Delete row">&times;</button></td>
+  </tr>
+</template>
+
+<script>
+  const feeBody = document.getElementById('feeBody');
+  const rowTemplate = document.getElementById('rowTemplate');
+  const btnAddRow = document.getElementById('btnAddRow');
+  const payMethod = document.getElementById('payMethod');
+
+  // Mostrar fecha actual
+  document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString();
+
+  // Función: Agregar fila
+  function addRow() {
+    const clone = rowTemplate.content.cloneNode(true);
+    feeBody.appendChild(clone);
+    calculateTotals();
+  }
+
+  // Evento: Click en agregar
+  btnAddRow.addEventListener('click', addRow);
+
+  // Evento: Eliminar fila o Recalcular al escribir
+  feeBody.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-row')) {
+      e.target.closest('tr').remove();
+      calculateTotals();
+    }
+  });
+
+  feeBody.addEventListener('input', (e) => {
+    if (e.target.classList.contains('calc-trigger')) {
+      calculateTotals();
+    }
+  });
+
+  payMethod.addEventListener('change', calculateTotals);
+
+  // Función: Cálculos Financieros
+  function calculateTotals() {
+    let sub = 0;
+    const rows = feeBody.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+      const q = parseFloat(row.querySelector('.qty').value) || 0;
+      const c = parseFloat(row.querySelector('.cost').value) || 0;
+      sub += (q * c);
+    });
+
+    let fee = 0;
+    if (payMethod.value === "Credit Card") {
+      fee = sub * 0.03;
+    }
+
+    document.getElementById('subtotal').value = sub.toFixed(2);
+    document.getElementById('cardFee').value = fee.toFixed(2);
+    document.getElementById('grandTotal').value = (sub + fee).toFixed(2);
+  }
+
+  // Manejo del Envío
+  document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Aquí recogerías todos los datos para enviarlos a SharePoint
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    console.log("Data ready for SharePoint:", data);
+    alert("Sending to SharePoint List... \nTotal: $" + document.getElementById('grandTotal').value);
+  });
+
+  // Iniciar con una fila por defecto
+  addRow();
+</script>
+
+</body>
+</html>
